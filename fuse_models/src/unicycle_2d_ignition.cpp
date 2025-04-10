@@ -107,13 +107,16 @@ void Unicycle2DIgnition::onInit()
 
 void Unicycle2DIgnition::start()
 {
+  /*
   started_ = true;
 
   // TODO(swilliams) Should this be executed every time optimizer.reset() is called, or only once ever?
   //                 I feel like it should be "only once ever".
   // Send an initial state transaction immediately, if requested
   if (params_.publish_on_startup && !initial_transaction_sent_)
+  //if (params_.publish_on_startup && !initial_transaction_sent_)
   {
+    ROS_WARN_STREAM(">>>> Unicycle2DIgnition Start....");
     auto pose = geometry_msgs::PoseWithCovarianceStamped();
     pose.header.stamp = ros::Time::now();
     pose.pose.pose.position.x = params_.initial_state[0];
@@ -124,7 +127,22 @@ void Unicycle2DIgnition::start()
     pose.pose.covariance[35] = params_.initial_sigma[2] * params_.initial_sigma[2];
     sendPrior(pose);
     initial_transaction_sent_ = true;
+  }*/
+
+  /*CODE MODIFIED HERE*/
+  if(!params_.publish_on_startup){
+    params_.publish_on_startup = true;
+    return;
   }
+  
+  started_ = true;
+  auto pose = geometry_msgs::PoseWithCovarianceStamped();
+  pose.header.stamp = ros::Time::now();
+  pose.pose.pose.position.x = params_.initial_state[0];
+  pose.pose.pose.position.y = params_.initial_state[1];
+  pose.pose.pose.orientation = tf2::toMsg(tf2::Quaternion(tf2::Vector3(0.0, 0.0, 1.0), params_.initial_state[2]));
+  sendPrior(pose);
+  initial_transaction_sent_ = true;
 }
 
 void Unicycle2DIgnition::stop()
@@ -273,10 +291,13 @@ void Unicycle2DIgnition::sendPrior(const geometry_msgs::PoseWithCovarianceStampe
   // The pose covariances are extracted from the provided PoseWithCovarianceStamped message.
   // The remaining covariances are provided as parameters to the parameter server.
   auto position_cov = fuse_core::Matrix2d();
-  position_cov << pose.pose.covariance[0], pose.pose.covariance[1],
-                  pose.pose.covariance[6], pose.pose.covariance[7];
+  //position_cov << pose.pose.covariance[0], pose.pose.covariance[1],
+  //                pose.pose.covariance[6], pose.pose.covariance[7];
+  position_cov << params_.initial_sigma[0] * params_.initial_sigma[0], 0.0,
+                  0.0, params_.initial_sigma[1] * params_.initial_sigma[1];
   auto orientation_cov = fuse_core::Matrix1d();
-  orientation_cov << pose.pose.covariance[35];
+  //orientation_cov << pose.pose.covariance[35];
+  orientation_cov << params_.initial_sigma[2] * params_.initial_sigma[2];
   auto linear_velocity_cov = fuse_core::Matrix2d();
   linear_velocity_cov << params_.initial_sigma[3] * params_.initial_sigma[3], 0.0,
                          0.0, params_.initial_sigma[4] * params_.initial_sigma[4];

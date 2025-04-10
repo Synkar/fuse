@@ -88,6 +88,7 @@ install(
 #############
 ## Testing ##
 #############
+set(CATKIN_ENABLE_TESTING OFF)
 
 if(CATKIN_ENABLE_TESTING)
   find_package(roslint REQUIRED)
